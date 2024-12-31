@@ -256,7 +256,7 @@ class _RadioHomePageState extends State<RadioHomePage> with WidgetsBindingObserv
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Popz Place Radio Player'),
+        title: const Text('Popz Place Radio Player v2.0.0'),
       ),
       body: _isLargeScreen
           ? Row(
@@ -284,8 +284,6 @@ class _RadioHomePageState extends State<RadioHomePage> with WidgetsBindingObserv
                   _buildPlayerControls(),
                   const SizedBox(height: 20),
                   _buildSearchAndFavorites(),
-                  const SizedBox(height: 20),
-                  _buildExitButton(),
                 ],
               ),
             ),
@@ -337,56 +335,100 @@ class _RadioHomePageState extends State<RadioHomePage> with WidgetsBindingObserv
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 20),
+          Container(
+            padding: const EdgeInsets.all(15),
+            decoration: BoxDecoration(
+              color: const Color(0xFF2d2d2d),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: Colors.pink.withOpacity(0.5)),
+            ),
+            child: const Text(
+              '👆 Please select a station from your Favorites list to start playing',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.pink,
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          const SizedBox(height: 20),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              Expanded(
+                child: Slider(
+                  value: _audioPlayer.volume,
+                  min: 0.0,
+                  max: 1.0,
+                  divisions: 10,
+                  label: _audioPlayer.volume.toStringAsFixed(1),
+                  onChanged: (double value) {
+                    setState(() {
+                      _audioPlayer.setVolume(value);
+                    });
+                  },
+                ),
+              ),
+              const SizedBox(width: 10),
               ElevatedButton(
                 onPressed: () async {
-                  if (isPlaying) {
-                    await _audioPlayer.pause();
-                    setState(() {
-                      isPlaying = false;
-                    });
-                  } else {
-                    await _audioPlayer.resume();
-                    setState(() {
-                      isPlaying = true;
-                    });
-                  }
+                  await _audioPlayer.stop();
+                  setState(() {
+                    isPlaying = false;
+                    nowPlaying = 'Ready to Play';
+                    currentSong = '';
+                  });
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 30,
-                    vertical: 15,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
+                  backgroundColor: Colors.red,
+                  padding: const EdgeInsets.all(12),
+                  shape: const CircleBorder(),
                 ),
-                child: Text(
-                  isPlaying ? 'Pause' : 'Play',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                  ),
-                ),
+                child: const Icon(Icons.stop, color: Colors.white),
               ),
             ],
           ),
           const SizedBox(height: 20),
-          Slider(
-            value: _audioPlayer.volume,
-            min: 0.0,
-            max: 1.0,
-            divisions: 10,
-            label: _audioPlayer.volume.toStringAsFixed(1),
-            onChanged: (double value) {
-              setState(() {
-                _audioPlayer.setVolume(value);
-              });
+          ElevatedButton(
+            onPressed: () async {
+              await _audioPlayer.pause();
+              if (kIsWeb) {
+                showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Exit'),
+                    content: const Text('Thank you for using Popz Place Radio!'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('OK'),
+                      ),
+                    ],
+                  ),
+                );
+              } else {
+                SystemNavigator.pop();
+              }
             },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF666666),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 25,
+                vertical: 15,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+            ),
+            child: const Text(
+              'Exit Radio Player',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
           ),
         ],
       ),
@@ -565,54 +607,22 @@ class _RadioHomePageState extends State<RadioHomePage> with WidgetsBindingObserv
                     style: const TextStyle(color: Colors.white),
                   ),
                   onTap: () => _playStation(station),
+                  trailing: station.name != 'Popz Place Radio' ? // Don't show delete for default station
+                    IconButton(
+                      icon: const Icon(Icons.delete, color: Colors.red),
+                      onPressed: () {
+                        setState(() {
+                          favorites.remove(station);
+                          _saveFavorites();
+                        });
+                      },
+                    )
+                    : null,
                 );
               },
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildExitButton() {
-    return ElevatedButton(
-      onPressed: () async {
-        await _audioPlayer.pause();
-        if (kIsWeb) {
-          showDialog(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: const Text('Exit'),
-              content: const Text('Thank you for using Popz Place Radio!'),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('OK'),
-                ),
-              ],
-            ),
-          );
-        } else {
-          SystemNavigator.pop();
-        }
-      },
-      style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFF666666),
-        padding: const EdgeInsets.symmetric(
-          horizontal: 25,
-          vertical: 15,
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-      ),
-      child: const Text(
-        'Exit Radio Player',
-        style: TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
-        ),
       ),
     );
   }

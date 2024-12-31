@@ -12,7 +12,7 @@
     <uses-feature android:name="android.hardware.foldable" android:required="false" />
     
     <application
-        android:label="Popz Place Radio"
+        android:label="Popz Place Radio Player"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:resizeableActivity="true"
